@@ -30,6 +30,9 @@ private:
     QString getClientKey(const QTcpSocket * client) const;
 
 private:
+    QString encrypt(const QString &message);
+
+private:
     QTcpServer _server;
     QHash<QString, QTcpSocket*> _clients;
 };

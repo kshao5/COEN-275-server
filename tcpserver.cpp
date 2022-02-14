@@ -1,5 +1,5 @@
 #include "tcpserver.h"
-
+#include <iostream>
 TcpServer::TcpServer(QObject *parent)
     : QObject{parent}
 {
@@ -12,9 +12,19 @@ TcpServer::TcpServer(QObject *parent)
     }
 }
 
+QString TcpServer::encrypt(const QString &message) {
+    std::string text = message.toUtf8().constData();
+    for (size_t i = 0; i != text.size(); i++) {
+        text[i] += 2;
+    }
+    return QString::fromStdString(text);
+}
+
 void TcpServer::sendMessage(const QString &message)
 {
-    emit newMessage("Server: " + message.toUtf8());
+    QString completeMsg = "Server: " + message;
+    QString msg = encrypt(completeMsg);//encryption before send message
+    emit newMessage(msg.toUtf8());
 }
 
 void TcpServer::onNewConnection()

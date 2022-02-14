@@ -27,7 +27,7 @@ Window {
             model: ListModel {
                 id: listModelMessages
                 ListElement {
-                    message: "Welcomne to server"
+                    message: "Welcome to server"
                 }
             }
             delegate: ItemDelegate {
@@ -39,13 +39,17 @@ Window {
             TextField {
                 id: textFieldMessage
                 placeholderText: qsTr("Your message...")
+                color: "black"
                 Layout.fillWidth: true
                 onAccepted: buttonSend.clicked()
             }
             Button {
                 id: buttonSend
                 text: qsTr("Send")
+                palette.buttonText: "black"
+
                 onClicked: {
+                    //encryption
                     server.sendMessage(textFieldMessage.text)
                     textFieldMessage.clear()
                 }
