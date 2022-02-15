@@ -12,7 +12,7 @@ class TcpServer : public QObject
 {
     Q_OBJECT
 public:
-    static TcpServer* instance;
+
     static TcpServer* getInstance(QObject* parent = nullptr, quint16 port=45000);
 
 
@@ -44,8 +44,8 @@ private:
 private:
     QTcpServer _server;
     QHash<QString, QTcpSocket*> _clients;
+    static TcpServer* instance;
 
-    static const QHash<QByteArray, QByteArray> QAs;
 };
 
 #endif // TCPSERVER_H

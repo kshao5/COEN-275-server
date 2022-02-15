@@ -1,12 +1,9 @@
 #include "tcpserver.h"
 #include <iostream>
 #include "QtWidgets/QMainWindow"
+#include "chatbot.h"
 
-const QHash<QByteArray, QByteArray> TcpServer::QAs = {
-    {"hi","Hello"},
-    {"bye","GoodBye"},
-    {"how are you", "Good, thank you!"}
-};
+TcpServer* TcpServer::instance = nullptr;
 
 TcpServer::TcpServer(QObject *parent, quint16 port)
     : QObject{parent}
@@ -86,7 +83,8 @@ QString TcpServer::encrypt(const QString &message) {
 
 void TcpServer::sendUnicast(QTcpSocket *client, const QByteArray &message)
 {
-    QByteArray response = "Auto reply: " + QAs.value(message.toLower(), "Sorry, I don't understand");
+    ChatBot *cb = cb->getInstance();
+    QByteArray response = "Auto reply: " + cb->reply(message);
     emit showMsg(response);
     QString msg = encrypt(response);//encryption before send message
     qInfo() << "sendUnicast():" + msg;
@@ -137,9 +135,8 @@ QString TcpServer::getClientUsername(const QTcpSocket *client) const
 }
 
 TcpServer* TcpServer::getInstance(QObject* parent, quint16 port) {
-    TcpServer* currentInstance = TcpServer::instance;
-    if (!currentInstance) {
-         currentInstance = new TcpServer(parent, port);
+    if (!TcpServer::instance) {
+         TcpServer::instance = new TcpServer(parent, port);
     }
-    return currentInstance;
+    return TcpServer::instance;
 }
