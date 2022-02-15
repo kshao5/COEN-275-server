@@ -14,6 +14,7 @@ TcpServer::TcpServer(QObject *parent, quint16 port)
     connect(&_server, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
     connect(this, &TcpServer::broadcast, this, &TcpServer::onBroadcast);
     connect(this, &TcpServer::unicast, this, &TcpServer::onUnicast);
+    connect(this, &TcpServer::showMsg, this, &TcpServer::onShowMsg);
 
     // listen on custom port. if succeed
     if (_server.listen(QHostAddress::Any, port)) {
@@ -54,10 +55,10 @@ void TcpServer::onReadyRead()
     const auto client_username = this->getClientUsername(client);
     const auto client_key = this -> getClientKey(client);
     const auto client_msg = client -> readAll();
-    const auto message = client_key.toUtf8() + ": " + client_msg;
+    const auto message = client_username + ": " + client_msg;
 
-    qInfo() << "(Receive)"+client_username + ": " + client_msg;
-
+    qInfo() << "(Receive)"+message;
+    emit showMsg(message.toUtf8());
     // send message to the current client
     sendUnicast(client, client_msg);
 }
@@ -86,8 +87,8 @@ QString TcpServer::encrypt(const QString &message) {
 void TcpServer::sendUnicast(QTcpSocket *client, const QByteArray &message)
 {
     QByteArray response = "Auto reply: " + QAs.value(message.toLower(), "Sorry, I don't understand");
-    QString completeMsg = response;
-    QString msg = encrypt(completeMsg);//encryption before send message
+    emit showMsg(response);
+    QString msg = encrypt(response);//encryption before send message
     qInfo() << "sendUnicast():" + msg;
     emit unicast(client, msg.toUtf8());
 }
@@ -99,9 +100,10 @@ void TcpServer::onUnicast(QTcpSocket *client, const QByteArray &message)
     client -> flush();
 }
 
-void TcpServer::sendBroadcast(const QString &message)
+void TcpServer::sendBroadcast(const QByteArray &message)
 {
-    QString completeMsg = "BROADCAST: " + message;
+    QByteArray completeMsg = "BROADCAST: " + message;
+    emit showMsg(completeMsg);
     QString msg = encrypt(completeMsg);//encryption before send message
     qInfo() << "sendBroadcast():" + msg;
     emit broadcast(msg.toUtf8());
@@ -115,6 +117,11 @@ void TcpServer::onBroadcast(const QByteArray &ba)
         client -> write(ba);
         client -> flush();
     }
+}
+
+void TcpServer::onShowMsg(const QByteArray &ba)
+{
+
 }
 
 QString TcpServer::getClientKey(const QTcpSocket *client) const

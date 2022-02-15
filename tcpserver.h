@@ -19,16 +19,19 @@ public:
 signals:
     void broadcast(const QByteArray &message);
     void unicast(QTcpSocket * client, const QByteArray &message);
+    void showMsg(const QByteArray &ba);
 
 public slots:
     void sendUnicast(QTcpSocket *client, const QByteArray &message);
-    void sendBroadcast(const QString &message);
+    void sendBroadcast(const QByteArray &message);
+
 
 private slots:
     void onNewConnection();
     void onReadyRead();
     void onBroadcast(const QByteArray &ba);
     void onUnicast(QTcpSocket * client, const QByteArray &message);
+    void onShowMsg(const QByteArray &ba);
     void onDisconnected();
 
 private:
