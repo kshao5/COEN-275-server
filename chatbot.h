@@ -13,6 +13,8 @@ private:
     static ChatBot* instance;
     explicit ChatBot();
     static const QHash<QByteArray, QByteArray> QAs;
+    QByteArray getTime();
+    QByteArray getDate();
 };
 
 #endif // CHATBOT_H
