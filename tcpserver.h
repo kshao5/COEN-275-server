@@ -12,29 +12,33 @@ class TcpServer : public QObject
 {
     Q_OBJECT
 public:
-    explicit TcpServer(QObject *parent = nullptr);
+    explicit TcpServer(QObject *parent = nullptr, quint16 port=45000);
 
 signals:
-    void newMessage(const QByteArray &message);
+    void broadcast(const QByteArray &message);
+    void unicast(QTcpSocket * client, const QByteArray &message);
 
 public slots:
-    void sendMessage(const QString &message);
+    void sendBroadcast(const QString &message);
 
 private slots:
     void onNewConnection();
     void onReadyRead();
-    void onNewMessage(const QByteArray &ba);
+    void onBroadcast(const QByteArray &ba);
+    void onUnicast(QTcpSocket * client, const QByteArray &message);
     void onDisconnected();
 
 private:
     QString getClientKey(const QTcpSocket * client) const;
-
+    QString getClientUsername(const QTcpSocket * client) const;
 private:
     QString encrypt(const QString &message);
 
 private:
     QTcpServer _server;
     QHash<QString, QTcpSocket*> _clients;
+
+    static const QHash<QByteArray, QByteArray> QAs;
 };
 
 #endif // TCPSERVER_H

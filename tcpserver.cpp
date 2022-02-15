@@ -1,41 +1,35 @@
 #include "tcpserver.h"
-#include <iostream>
-TcpServer::TcpServer(QObject *parent)
+
+const QHash<QByteArray, QByteArray> TcpServer::QAs = {
+    {"hi","Hello"},
+    {"bye","GoodBye"},
+    {"how are you", "Good, thank you!"}
+};
+
+TcpServer::TcpServer(QObject *parent, quint16 port)
     : QObject{parent}
 {
     connect(&_server, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
-    connect(this, &TcpServer::newMessage, this, &TcpServer::onNewMessage);
+    connect(this, &TcpServer::broadcast, this, &TcpServer::onBroadcast);
+    connect(this, &TcpServer::unicast, this, &TcpServer::onUnicast);
 
-    // listen on custom port 45000. if succeed
-    if (_server.listen(QHostAddress::Any, 45000)) {
-        qInfo() <<"Listening...";
+    // listen on custom port. if succeed
+    if (_server.listen(QHostAddress::Any, port)) {
+        qInfo() <<"Listening on port:" + QString::number(port);
     }
-}
-
-QString TcpServer::encrypt(const QString &message) {
-    std::string text = message.toUtf8().constData();
-    for (size_t i = 0; i != text.size(); i++) {
-        text[i] += 2;
-    }
-    return QString::fromStdString(text);
-}
-
-void TcpServer::sendMessage(const QString &message)
-{
-    QString completeMsg = "Server: " + message;
-    QString msg = encrypt(completeMsg);//encryption before send message
-    emit newMessage(msg.toUtf8());
 }
 
 void TcpServer::onNewConnection()
 {
+    qInfo() << "onNewConnection()";
+
     // get the next client that is waiting to connect to our server
     const auto client = _server.nextPendingConnection();
     if (client == nullptr) {
         return;
     }
 
-    qInfo() << "New client connected.";
+    qInfo() << "New client \"" + this->getClientUsername(client) + "\" is connected.";
 
     // use this hashmap to access our clients
     _clients.insert(this ->getClientKey(client), client);
@@ -49,30 +43,54 @@ void TcpServer::onNewConnection()
 
 void TcpServer::onReadyRead()
 {
+    qInfo() << "onReadyRead()";
     // we can use sender() to get pointer to client object and read message from client object
     const auto client = qobject_cast<QTcpSocket*>(sender());
     if (client == nullptr) {
         return;
     }
+    const auto client_username = this->getClientUsername(client);
+    const auto client_key = this -> getClientKey(client);
+    const auto client_msg = client -> readAll();
+    const auto message = client_key.toUtf8() + ": " + client_msg;
 
-    const auto message = this -> getClientKey(client).toUtf8() + ": " + client -> readAll();
+    qInfo() << "(Receive)"+client_username + ": " + client_msg;
 
-    // send message to other client and show in our user interface
-    emit newMessage(message);
+    // send message to the current client
+    emit unicast(client, client_msg);
 }
 
 void TcpServer::onDisconnected()
 {
+    qInfo() << "onDisconnected()";
     const auto client = qobject_cast<QTcpSocket*>(sender());
     if (client == nullptr) {
         return;
     }
 
     _clients.remove(this -> getClientKey(client));
+    qInfo() << "Removed client:" + this -> getClientKey(client);
 }
 
-void TcpServer::onNewMessage(const QByteArray &ba)
+
+void TcpServer::onUnicast(QTcpSocket *client, const QByteArray &message)
 {
+    qInfo() << "onUnicast()";
+    QByteArray response = QAs.value(message.toLower(), "Sorry, I don't understand");
+    client -> write("Auto reply: " + response);
+    client -> flush();
+}
+
+void TcpServer::sendBroadcast(const QString &message)
+{
+    qInfo() << "sendBroadcast():" + message;
+    emit broadcast("BROADCAST: " + message.toUtf8());
+}
+
+void TcpServer::onBroadcast(const QByteArray &ba)
+{
+    qInfo() << "onBroadcast()";
+
     for (const auto &client : qAsConst(_clients)) {
         client -> write(ba);
         client -> flush();
@@ -83,4 +101,9 @@ QString TcpServer::getClientKey(const QTcpSocket *client) const
 {
     // identify our client using address and port
     return client -> peerAddress().toString().append(":").append(QString::number(client -> peerPort()));
+}
+
+QString TcpServer::getClientUsername(const QTcpSocket *client) const
+{
+    return "USER "+QString::number(client -> peerPort());
 }
