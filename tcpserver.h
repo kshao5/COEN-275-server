@@ -12,7 +12,8 @@ class TcpServer : public QObject
 {
     Q_OBJECT
 public:
-    explicit TcpServer(QObject *parent = nullptr);
+    static TcpServer* instance;
+    static TcpServer* getInstance(QObject* parent = nullptr);
 
 signals:
     void newMessage(const QByteArray &message);
@@ -28,6 +29,7 @@ private slots:
 
 private:
     QString getClientKey(const QTcpSocket * client) const;
+    explicit TcpServer(QObject *parent = nullptr);
 
 private:
     QString encrypt(const QString &message);

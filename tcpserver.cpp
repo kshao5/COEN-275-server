@@ -1,5 +1,8 @@
 #include "tcpserver.h"
 #include <iostream>
+#include "QtWidgets/QMainWindow"
+
+
 TcpServer::TcpServer(QObject *parent)
     : QObject{parent}
 {
@@ -84,3 +87,14 @@ QString TcpServer::getClientKey(const QTcpSocket *client) const
     // identify our client using address and port
     return client -> peerAddress().toString().append(":").append(QString::number(client -> peerPort()));
 }
+
+TcpServer* TcpServer::getInstance(QObject* parent) {
+    TcpServer* currentInstance = TcpServer::instance;
+    if (!currentInstance) {
+         currentInstance = new TcpServer(parent);
+    }
+    return currentInstance;
+}
+
+
+

@@ -3,6 +3,8 @@
 #include "tcpserver.h"
 #include <QQmlContext>
 
+TcpServer* TcpServer::instance = 0;
+
 int main(int argc, char *argv[])
 {
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -18,9 +20,9 @@ int main(int argc, char *argv[])
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
 
-    TcpServer tcpServer;
+    TcpServer* tcpServer = tcpServer -> getInstance();
 
-    engine.rootContext() -> setContextProperty("server", &tcpServer);
+    engine.rootContext() -> setContextProperty("server", tcpServer);
     engine.load(url);
 
     return app.exec();
