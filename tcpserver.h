@@ -12,13 +12,16 @@ class TcpServer : public QObject
 {
     Q_OBJECT
 public:
-    explicit TcpServer(QObject *parent = nullptr, quint16 port=45000);
+    static TcpServer* instance;
+    static TcpServer* getInstance(QObject* parent = nullptr, quint16 port=45000);
+
 
 signals:
     void broadcast(const QByteArray &message);
     void unicast(QTcpSocket * client, const QByteArray &message);
 
 public slots:
+    void sendUnicast(QTcpSocket *client, const QByteArray &message);
     void sendBroadcast(const QString &message);
 
 private slots:
@@ -31,6 +34,7 @@ private slots:
 private:
     QString getClientKey(const QTcpSocket * client) const;
     QString getClientUsername(const QTcpSocket * client) const;
+    explicit TcpServer(QObject *parent = nullptr, quint16 port=45000);
 private:
     QString encrypt(const QString &message);
 

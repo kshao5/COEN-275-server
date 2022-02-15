@@ -1,4 +1,6 @@
 #include "tcpserver.h"
+#include <iostream>
+#include "QtWidgets/QMainWindow"
 
 const QHash<QByteArray, QByteArray> TcpServer::QAs = {
     {"hi","Hello"},
@@ -57,7 +59,7 @@ void TcpServer::onReadyRead()
     qInfo() << "(Receive)"+client_username + ": " + client_msg;
 
     // send message to the current client
-    emit unicast(client, client_msg);
+    sendUnicast(client, client_msg);
 }
 
 void TcpServer::onDisconnected()
@@ -73,18 +75,36 @@ void TcpServer::onDisconnected()
 }
 
 
+QString TcpServer::encrypt(const QString &message) {
+    std::string text = message.toUtf8().constData();
+    for (size_t i = 0; i != text.size(); i++) {
+        text[i] += 2;
+    }
+    return QString::fromStdString(text);
+}
+
+void TcpServer::sendUnicast(QTcpSocket *client, const QByteArray &message)
+{
+    QByteArray response = "Auto reply: " + QAs.value(message.toLower(), "Sorry, I don't understand");
+    QString completeMsg = response;
+    QString msg = encrypt(completeMsg);//encryption before send message
+    qInfo() << "sendUnicast():" + msg;
+    emit unicast(client, msg.toUtf8());
+}
+
 void TcpServer::onUnicast(QTcpSocket *client, const QByteArray &message)
 {
     qInfo() << "onUnicast()";
-    QByteArray response = QAs.value(message.toLower(), "Sorry, I don't understand");
-    client -> write("Auto reply: " + response);
+    client -> write(message);
     client -> flush();
 }
 
 void TcpServer::sendBroadcast(const QString &message)
 {
-    qInfo() << "sendBroadcast():" + message;
-    emit broadcast("BROADCAST: " + message.toUtf8());
+    QString completeMsg = "BROADCAST: " + message;
+    QString msg = encrypt(completeMsg);//encryption before send message
+    qInfo() << "sendBroadcast():" + msg;
+    emit broadcast(msg.toUtf8());
 }
 
 void TcpServer::onBroadcast(const QByteArray &ba)
@@ -103,7 +123,16 @@ QString TcpServer::getClientKey(const QTcpSocket *client) const
     return client -> peerAddress().toString().append(":").append(QString::number(client -> peerPort()));
 }
 
+
 QString TcpServer::getClientUsername(const QTcpSocket *client) const
 {
     return "USER "+QString::number(client -> peerPort());
+}
+
+TcpServer* TcpServer::getInstance(QObject* parent, quint16 port) {
+    TcpServer* currentInstance = TcpServer::instance;
+    if (!currentInstance) {
+         currentInstance = new TcpServer(parent, port);
+    }
+    return currentInstance;
 }

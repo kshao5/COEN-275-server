@@ -39,12 +39,14 @@ Window {
             TextField {
                 id: textFieldMessage
                 placeholderText: qsTr("Your message...")
+                color: "black"
                 Layout.fillWidth: true
                 onAccepted: buttonSend.clicked()
             }
             Button {
                 id: buttonSend
                 text: qsTr("Send")
+                palette.buttonText: "black"
                 onClicked: {
                     server.sendBroadcast(textFieldMessage.text)
                     textFieldMessage.clear()
