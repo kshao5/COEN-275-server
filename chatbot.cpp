@@ -1,19 +1,11 @@
 #include "chatbot.h"
 #include <QDateTime>
-ChatBot* ChatBot::instance = nullptr;
 
 const QHash<QByteArray, QByteArray> ChatBot::QAs = {
     {"hi","Hello"},
     {"bye","GoodBye"},
     {"how are you", "Good, thank you!"}
 };
-
-ChatBot* ChatBot::getInstance() {
-    if (!ChatBot::instance) {
-        ChatBot::instance = new ChatBot();
-    }
-    return ChatBot::instance;
-}
 
 
 QByteArray ChatBot::reply(const QByteArray &question){
@@ -26,7 +18,7 @@ QByteArray ChatBot::reply(const QByteArray &question){
     return QAs.value(parsedQues, "Sorry, I don't understand");
 }
 
-ChatBot::ChatBot(){}
+ChatBot::ChatBot(QString clientKey):clientKey(clientKey){}
 
 QByteArray ChatBot::getTime(){
     return QDateTime::currentDateTime().toString().toUtf8();

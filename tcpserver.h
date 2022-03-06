@@ -7,13 +7,14 @@
 // for client
 #include <QTcpSocket>
 #include <QHash>
+#include "chatbotGroup.h"
 
 class TcpServer : public QObject
 {
     Q_OBJECT
 public:
 
-    static TcpServer* getInstance(QObject* parent = nullptr, quint16 port=45000);
+    static TcpServer* getInstance(QObject* parent = nullptr, quint16 port=45000, int maxChatBots=10);
 
 
 signals:
@@ -37,13 +38,14 @@ private slots:
 private:
     QString getClientKey(const QTcpSocket * client) const;
     QString getClientUsername(const QTcpSocket * client) const;
-    explicit TcpServer(QObject *parent = nullptr, quint16 port=45000);
+    explicit TcpServer(QObject *parent = nullptr, quint16 port=45000, int maxChatBots=10);
 private:
     QString encrypt(const QString &message);
 
 private:
     QTcpServer _server;
     QHash<QString, QTcpSocket*> _clients;
+    ChatBotGroup* _chatbots;
     static TcpServer* instance;
 
 };

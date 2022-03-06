@@ -18,7 +18,8 @@ int main(int argc, char *argv[])
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
 
-    TcpServer* tcpServer = tcpServer -> getInstance();
+    int maxChatBots = 2;
+    TcpServer* tcpServer = tcpServer -> getInstance(nullptr, 45000, maxChatBots);
 
     engine.rootContext() -> setContextProperty("server", tcpServer);
     engine.load(url);

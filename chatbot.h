@@ -3,15 +3,13 @@
 #include <QObject>
 #include <QHash>
 
-// ChatBot is a singleton
 class ChatBot{
 public:
-    static ChatBot* getInstance();
+    explicit ChatBot(QString clientKey);
     QByteArray reply(const QByteArray &question);
 
 private:
-    static ChatBot* instance;
-    explicit ChatBot();
+    QString clientKey;
     static const QHash<QByteArray, QByteArray> QAs;
     QByteArray getTime();
     QByteArray getDate();
