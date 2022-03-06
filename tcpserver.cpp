@@ -5,7 +5,7 @@
 
 TcpServer* TcpServer::instance = nullptr;
 
-TcpServer::TcpServer(QObject *parent, quint16 port)
+TcpServer::TcpServer(QObject *parent, quint16 port, int maxChatBots)
     : QObject{parent}
 {
     connect(&_server, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
@@ -17,6 +17,8 @@ TcpServer::TcpServer(QObject *parent, quint16 port)
     if (_server.listen(QHostAddress::Any, port)) {
         qInfo() <<"Listening on port:" + QString::number(port);
     }
+
+    _chatbots = new ChatBotGroup(maxChatBots);
 }
 
 void TcpServer::onNewConnection()
@@ -29,10 +31,23 @@ void TcpServer::onNewConnection()
         return;
     }
 
+    QString clientKey = this ->getClientKey(client);
+    QString msg;
+
+    if (_chatbots->addChatBot(clientKey) < 0) {
+        qInfo() << "New client \"" + this->getClientUsername(client) + "\" wants to connect but server exceeds the maximum number of chatbots.";
+        msg = "The server is busy, please wait and re-try";
+        emit unicast(client, encrypt(msg).toUtf8());
+        client->close();
+        return;
+    }
+
     qInfo() << "New client \"" + this->getClientUsername(client) + "\" is connected.";
+    msg = "You are connected to the server";
+    emit unicast(client, encrypt(msg).toUtf8());
 
     // use this hashmap to access our clients
-    _clients.insert(this ->getClientKey(client), client);
+    _clients.insert(clientKey, client);
 
     // readyRead: when clients send message to us and we are ready to read
     connect(client, &QTcpSocket::readyRead, this, &TcpServer::onReadyRead);
@@ -67,8 +82,9 @@ void TcpServer::onDisconnected()
     if (client == nullptr) {
         return;
     }
-
-    _clients.remove(this -> getClientKey(client));
+    QString clientKey = this -> getClientKey(client);
+    _chatbots->rmChatBot(clientKey);
+    _clients.remove(clientKey);
     qInfo() << "Removed client:" + this -> getClientKey(client);
 }
 
@@ -83,8 +99,7 @@ QString TcpServer::encrypt(const QString &message) {
 
 void TcpServer::sendUnicast(QTcpSocket *client, const QByteArray &message)
 {
-    ChatBot *cb = cb->getInstance();
-    QByteArray response = "Auto reply: " + cb->reply(message);
+    QByteArray response = "Auto reply: " + _chatbots->replyClient(this -> getClientKey(client), message);
     emit showMsg(response);
     QString msg = encrypt(response);//encryption before send message
     qInfo() << "sendUnicast():" + msg;
@@ -134,9 +149,9 @@ QString TcpServer::getClientUsername(const QTcpSocket *client) const
     return "USER "+QString::number(client -> peerPort());
 }
 
-TcpServer* TcpServer::getInstance(QObject* parent, quint16 port) {
+TcpServer* TcpServer::getInstance(QObject* parent, quint16 port, int maxChatBots) {
     if (!TcpServer::instance) {
-         TcpServer::instance = new TcpServer(parent, port);
+         TcpServer::instance = new TcpServer(parent, port, maxChatBots);
     }
     return TcpServer::instance;
 }
